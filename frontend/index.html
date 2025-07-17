@@ -205,8 +205,105 @@
             document.getElementById('audioTracks').style.display = 'block';
         }
 
+         // 播放音频轨道
+         window.playAudioTrack = async function(trackIndex) {
+            const result = window.lastResult;
+            if (!result || !result.audio_tracks[trackIndex]) {
+                showError('No audio track available');
+                return;
+            }
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+// decodeAndPlayMP3Audio(yourMP3Data, audioContext);
+            const track = result.audio_tracks[trackIndex];
+            const button = document.getElementById(`play-${trackIndex}`);
+            button.disabled = true;
+            button.textContent = 'Playing...';
+
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const buffer = new ArrayBuffer(track.data.length);
+            const view = new Uint8Array(buffer);
+            for (let i = 0; i < track.data.length; i++) {
+                view[i] = track.data[i];
+            }
+            // // 1. 解码MP3数据
+            // const audioBuffer = await audioCtx.decodeAudioData(buffer);
+            
+            // // 2. 创建播放源
+            // const source = audioCtx.createBufferSource();
+            // source.buffer = audioBuffer;
+            
+            // // 3. 连接输出
+            // source.connect(audioCtx.destination);
+            
+            // // 4. 播放
+            // source.start();
+            // return source;
+
+
+                // console.log(track.data)
+                const blob = new Blob([buffer], { type: 'audio/mpeg' });
+                const objectUrl = URL.createObjectURL(blob);
+                
+                // // 2. 创建并配置audio元素
+                const audio = new Audio();
+                audio.src = objectUrl;
+                audio.controls = true; // 添加控制条便于调试
+                audio.preload = "auto";
+                
+                // // 3. 必须加入DOM才能触发事件
+                document.body.appendChild(audio);
+        
+                // // 4. 关键：显式加载音频
+                audio.load();
+
+
+                // console.log(objectUrl);
+                // const buffer = await new Promise((resolve, reject) => {
+                //     const startTime = Date.now();
+                //     console.log('audio', audio);
+                //     audio.addEventListener('canplaythrough', () => {
+                //         console.log('canplaythrough', 1111);
+                //         // 创建离线音频上下文进行解码
+                //         const offlineContext = new OfflineAudioContext(
+                //             audioContext.destination.channelCount,
+                //             audio.duration * audioContext.sampleRate,
+                //             audioContext.sampleRate
+                //         );
+                        
+                //         const source = offlineContext.createBufferSource();
+                //         const request = new XMLHttpRequest();
+                //         request.open('GET', audio.src, true);
+                //         request.responseType = 'arraybuffer';
+                        
+                //         request.onload = () => {
+                //             offlineContext.decodeAudioData(request.response, buffer => {
+                //                 resolve(buffer);
+                //                 URL.revokeObjectURL(objectUrl);
+                //                 console.log(`Decoding took: ${Date.now() - startTime}ms`);
+                //             }, reject);
+                //         };
+                        
+                //         request.send();
+                //     });
+                // });
+        
+                // // 创建播放源
+                // const source = audioContext.createBufferSource();
+                // source.buffer = buffer;
+                // console.log('buffer', buffer);
+                // source.connect(audioContext.destination);
+                // source.start();
+
+            } catch (error) {
+                console.error('Error playing audio:', error);
+                showError('Error playing audio: ' + error.message);
+                button.disabled = false;
+                button.textContent = `Play Track ${trackIndex + 1}`;
+            }
+        };
         // 播放音频轨道
-        window.playAudioTrack = async function(trackIndex) {
+        window.playAudioTrack2 = async function(trackIndex) {
             const result = window.lastResult;
             if (!result || !result.audio_tracks[trackIndex]) {
                 showError('No audio track available');
