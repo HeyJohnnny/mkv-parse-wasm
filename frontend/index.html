@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MKV Parse WASM</title>
+</head>
+<body>
+    <h1>MKV Parse WASM</h1>
+    <input type="file" id="fileInput" accept=".mkv">
+    <script type="module">
+      import init, { analyze_mkv } from '../pkg/mkv_parse_wasm.js';
+      init().then(() => {
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          const result = await analyze_mkv(file);
+          console.log("result", result);
+          // document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+        })
+      });
+    </script>
+</body>
+</html>
