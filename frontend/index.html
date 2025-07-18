@@ -193,9 +193,7 @@
                         <button class="play-button" onclick="playAudioTrack(${index})" id="play-${index}">
                             Play Track ${index + 1}
                         </button>
-                        <button class="play-button" onclick="downloadAudioTrack(${index})" id="download-${index}">
-                            Download
-                        </button>
+ 
                     </div>
                 `;
                 
@@ -222,79 +220,40 @@
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const buffer = new ArrayBuffer(track.data.length);
-            const view = new Uint8Array(buffer);
-            for (let i = 0; i < track.data.length; i++) {
-                view[i] = track.data[i];
-            }
-            // // 1. 解码MP3数据
-            // const audioBuffer = await audioCtx.decodeAudioData(buffer);
-            
-            // // 2. 创建播放源
-            // const source = audioCtx.createBufferSource();
-            // source.buffer = audioBuffer;
-            
-            // // 3. 连接输出
-            // source.connect(audioCtx.destination);
-            
-            // // 4. 播放
-            // source.start();
-            // return source;
+                const view = new Uint8Array(buffer);
+                // 填充buffer
+                for (let i = 0; i < track.data.length; i++) {
+                    view[i] = track.data[i];
+                }
 
 
-                // console.log(track.data)
+                // 方法1
+                // // 1. 解码MP3数据
+                // const audioBuffer = await audioCtx.decodeAudioData(buffer);
+                
+                // // 2. 创建播放源
+                // const source = audioCtx.createBufferSource();
+                // source.buffer = audioBuffer;
+                
+                // // 3. 连接输出
+                // source.connect(audioCtx.destination);
+                
+                // // 4. 播放
+                // source.start();
+                // return source;
+
+
+                // 方法2
+                // 借用audio标签
                 const blob = new Blob([buffer], { type: 'audio/mpeg' });
                 const objectUrl = URL.createObjectURL(blob);
-                
-                // // 2. 创建并配置audio元素
                 const audio = new Audio();
                 audio.src = objectUrl;
-                audio.controls = true; // 添加控制条便于调试
+                audio.controls = true;  
                 audio.preload = "auto";
-                
-                // // 3. 必须加入DOM才能触发事件
                 document.body.appendChild(audio);
-        
-                // // 4. 关键：显式加载音频
                 audio.load();
 
-
-                // console.log(objectUrl);
-                // const buffer = await new Promise((resolve, reject) => {
-                //     const startTime = Date.now();
-                //     console.log('audio', audio);
-                //     audio.addEventListener('canplaythrough', () => {
-                //         console.log('canplaythrough', 1111);
-                //         // 创建离线音频上下文进行解码
-                //         const offlineContext = new OfflineAudioContext(
-                //             audioContext.destination.channelCount,
-                //             audio.duration * audioContext.sampleRate,
-                //             audioContext.sampleRate
-                //         );
-                        
-                //         const source = offlineContext.createBufferSource();
-                //         const request = new XMLHttpRequest();
-                //         request.open('GET', audio.src, true);
-                //         request.responseType = 'arraybuffer';
-                        
-                //         request.onload = () => {
-                //             offlineContext.decodeAudioData(request.response, buffer => {
-                //                 resolve(buffer);
-                //                 URL.revokeObjectURL(objectUrl);
-                //                 console.log(`Decoding took: ${Date.now() - startTime}ms`);
-                //             }, reject);
-                //         };
-                        
-                //         request.send();
-                //     });
-                // });
-        
-                // // 创建播放源
-                // const source = audioContext.createBufferSource();
-                // source.buffer = buffer;
-                // console.log('buffer', buffer);
-                // source.connect(audioContext.destination);
-                // source.start();
-
             } catch (error) {
                 console.error('Error playing audio:', error);
                 showError('Error playing audio: ' + error.message);
@@ -302,112 +261,7 @@
                 button.textContent = `Play Track ${trackIndex + 1}`;
             }
         };
-        // 播放音频轨道
-        window.playAudioTrack2 = async function(trackIndex) {
-            const result = window.lastResult;
-            if (!result || !result.audio_tracks[trackIndex]) {
-                showError('No audio track available');
-                return;
-            }
-
-            const track = result.audio_tracks[trackIndex];
-            const button = document.getElementById(`play-${trackIndex}`);
-            button.disabled = true;
-            button.textContent = 'Playing...';
-
-            try {
-                // 停止当前播放
-                if (currentSource) {
-                    currentSource.stop();
-                    currentSource = null;
-                }
-
-                // 创建 AudioContext
-                if (!currentAudioContext) {
-                    currentAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-
-                // 将原始数据转换为 AudioBuffer
-                const audioBuffer = await createAudioBufferFromRawData(track.data, track.codec);
-                
-                // 播放音频
-                const source = currentAudioContext.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(currentAudioContext.destination);
-                source.start(0);
-                
-                currentSource = source;
-
-                // 播放完成后恢复按钮
-                source.onended = () => {
-                    button.disabled = false;
-                    button.textContent = `Play Track ${trackIndex + 1}`;
-                    currentSource = null;
-                };
-
-            } catch (error) {
-                console.error('Error playing audio:', error);
-                showError('Error playing audio: ' + error.message);
-                button.disabled = false;
-                button.textContent = `Play Track ${trackIndex + 1}`;
-            }
-        };
-
-        // 下载音频轨道
-        window.downloadAudioTrack = function(trackIndex) {
-            const result = window.lastResult;
-            if (!result || !result.audio_tracks[trackIndex]) {
-                showError('No audio track available');
-                return;
-            }
-
-            const track = result.audio_tracks[trackIndex];
-            const blob = new Blob([track.data], { type: 'audio/raw' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `audio_track_${trackIndex + 1}_${track.codec}.raw`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        };
-
-        // 从原始数据创建 AudioBuffer
-        async function createAudioBufferFromRawData(rawData, codec) {
-            // 这里需要根据不同的编解码器进行解码
-            // 为了简化，我们假设数据是 PCM 格式
-            // 在实际应用中，你可能需要使用 Web Audio API 或其他解码器
-            
-            const audioContext = currentAudioContext;
-            const sampleRate = 44100; // 默认采样率
-            const channels = 2; // 默认双声道
-            
-            // 将 Uint8Array 转换为 Float32Array
-            const buffer = new ArrayBuffer(rawData.length);
-            const view = new Uint8Array(buffer);
-            for (let i = 0; i < rawData.length; i++) {
-                view[i] = rawData[i];
-            }
-
-            // 创建 AudioBuffer
-            const audioBuffer = audioContext.createBuffer(channels, rawData.length / 4, sampleRate);
-            
-            // 将数据复制到 AudioBuffer
-            for (let channel = 0; channel < channels; channel++) {
-                const channelData = audioBuffer.getChannelData(channel);
-                const dataView = new DataView(buffer);
-                
-                for (let i = 0; i < channelData.length; i++) {
-                    // 假设数据是 16-bit PCM
-                    const sample = dataView.getInt16(i * 2, true) / 32768.0;
-                    channelData[i] = sample;
-                }
-            }
-
-            return audioBuffer;
-        }
-
+         
         // 保存结果供全局使用
         window.lastResult = null;
     </script>
